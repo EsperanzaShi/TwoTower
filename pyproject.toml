@@ -1,0 +1,20 @@
+[project]
+name = "two-tower-msmarco"
+version = "0.1.0"
+description = "Search engine with two-tower architecture using MS MARCO triplet training"
+authors = [
+    { name="Esperanza Shi", email="your-email@example.com" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+
+dependencies = [
+    "datasets",
+    "tqdm",
+    "transformers",
+    "huggingface_hub"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

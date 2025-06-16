@@ -1,0 +1,6 @@
+pyproject.toml
+two_tower_msmarco.egg-info/PKG-INFO
+two_tower_msmarco.egg-info/SOURCES.txt
+two_tower_msmarco.egg-info/dependency_links.txt
+two_tower_msmarco.egg-info/requires.txt
+two_tower_msmarco.egg-info/top_level.txt

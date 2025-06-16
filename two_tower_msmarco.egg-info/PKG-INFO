@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: two-tower-msmarco
+Version: 0.1.0
+Summary: Search engine with two-tower architecture using MS MARCO triplet training
+Author-email: Esperanza Shi <your-email@example.com>
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: datasets
+Requires-Dist: tqdm
+Requires-Dist: transformers
+Requires-Dist: huggingface_hub
