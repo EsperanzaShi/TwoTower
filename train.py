@@ -1,5 +1,4 @@
 import os
-import json
 import pickle
 import torch
 import torch.nn as nn

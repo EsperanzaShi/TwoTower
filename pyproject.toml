@@ -13,7 +13,6 @@ dependencies = [
     "pickle",
     "datasets",
     "tqdm",
-    "model",
     "transformers",
     "huggingface_hub",
     "wandb",
