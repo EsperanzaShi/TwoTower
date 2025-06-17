@@ -7,6 +7,14 @@ from src.two_tower.model import TwoTowerModel
 from sklearn.metrics.pairwise import cosine_similarity
 import os
 
+
+import wandb
+
+wandb.init(
+    project="TwoTower",
+    name="validate-10000-triplets",  # or another descriptive name
+    job_type="validation"
+)
 # ----- Load tokenized validation triplets from W&B -----
 artifact = wandb.use_artifact("TwoTower/msmarco-triplets:v1", type="dataset")
 artifact_dir = artifact.download()
@@ -34,7 +42,6 @@ class TripletDataset(Dataset):
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = TwoTowerModel(freeze_bert=False).to(device)
 
-wandb.init(project="TwoTower", name="load-encoders", job_type="validation")
 model_artifact = wandb.use_artifact("TwoTower/bert-encoders:latest", type="model")
 artifact_dir = model_artifact.download()
 query_encoder_path = os.path.join(artifact_dir, "query_encoder.pt")
