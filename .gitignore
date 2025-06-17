@@ -41,6 +41,7 @@ checkpoints/
 
 # Ignore logs
 *.log
+wandb/latest-run
 
 # Ignore environment files
 .env
