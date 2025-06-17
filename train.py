@@ -116,7 +116,8 @@ wandb.save("saved_models/optimizer.pt")
 
 # ----- Final t-SNE Visualisation -----
 print("🔍 Generating t-SNE for final embeddings...")
-loader = DataLoader(dataset, batch_size=64)
+loader = DataLoader(dataset, batch_size=training_config["batch_size"])
+
 model.eval()
 embeddings, labels = [], []
 
