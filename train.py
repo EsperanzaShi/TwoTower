@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
-from model import TwoTowerModel, triplet_loss
+from two_tower.model import TwoTowerModel, triplet_loss
 from transformers import get_scheduler
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
