@@ -1,0 +1,12 @@
+{
+    "model": "TwoTowerModel",
+    "encoder": "bert-base-uncased",
+    "epochs": 1,
+    "batch_size": 64,
+    "triplet_margin": 1.0,
+    "optimizer": "AdamW",
+    "learning_rate": 1e-05,
+    "num_training_steps": 16,
+    "warmup_steps": 100,
+    "device": "cpu"
+}

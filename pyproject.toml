@@ -12,7 +12,8 @@ dependencies = [
     "datasets",
     "tqdm",
     "transformers",
-    "huggingface_hub"
+    "huggingface_hub",
+    "wandb"
 ]
 
 [build-system]

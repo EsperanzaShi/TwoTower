@@ -1,18 +1,16 @@
-import numpy as np
 import torch
 import pickle
-from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader, Dataset
 from model import TwoTowerModel
-from torch.utils.data import Dataset, DataLoader
-from tqdm import tqdm
+from sklearn.manifold import TSNE
+import numpy as np
 
-print("🔹 Loading tokenized triplets...")
-# ---- Load tokenized triplets (small subset is enough) ----
-with open("data/BERTtokenized_triplets.pkl", "rb") as f:
-    triplets = pickle.load(f)[:200]  # visualize only 200 for clarity
+# ----- Load tokenized triplets -----
+with open(".data/BERTtokenized_triplets.pkl", "rb") as f:
+    triplets = pickle.load(f)[:200]  # use 200 examples for clarity
 
-print("🔹 Preparing dataset and dataloader...")
+# ----- Custom Dataset -----
 class TripletDataset(Dataset):
     def __init__(self, triplets):
         self.triplets = triplets
@@ -26,20 +24,19 @@ class TripletDataset(Dataset):
 dataset = TripletDataset(triplets)
 dataloader = DataLoader(dataset, batch_size=16)
 
-print("🔹 Loading trained model...")
-# ---- Load trained model ----
+# ----- Load trained model -----
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = TwoTowerModel(freeze_bert=False).to(device)
+model = TwoTowerModel(freeze_bert=False)
+model.query_encoder.load_state_dict(torch.load("saved_models/query_encoder.pt"))
+model.doc_encoder.load_state_dict(torch.load("saved_models/doc_encoder.pt"))
+model.to(device)
 model.eval()
 
-print("🔹 Collecting embeddings...")
-# ---- Collect embeddings ----
-query_embeds = []
-pos_embeds = []
-neg_embeds = []
+# ----- Collect embeddings -----
+query_embeds, pos_embeds, neg_embeds = [], [], []
 
 with torch.no_grad():
-    for batch in tqdm(dataloader, desc="Collecting embeddings"):
+    for batch in dataloader:
         q_input_ids = batch["query_input_ids"].to(device)
         q_mask = batch["query_attention_mask"].to(device)
         p_input_ids = batch["positive_input_ids"].to(device)
@@ -47,34 +44,32 @@ with torch.no_grad():
         n_input_ids = batch["negative_input_ids"].to(device)
         n_mask = batch["negative_attention_mask"].to(device)
 
-        q_embed, pos_embed = model(q_input_ids, q_mask, p_input_ids, p_mask)
-        _, neg_embed = model(q_input_ids, q_mask, n_input_ids, n_mask)
+        q_embed, p_embed = model(q_input_ids, q_mask, p_input_ids, p_mask)
+        _, n_embed = model(q_input_ids, q_mask, n_input_ids, n_mask)
 
         query_embeds.append(q_embed.cpu())
-        pos_embeds.append(pos_embed.cpu())
-        neg_embeds.append(neg_embed.cpu())
+        pos_embeds.append(p_embed.cpu())
+        neg_embeds.append(n_embed.cpu())
 
-print("🔹 Preparing embeddings for t-SNE...")
-# ---- Stack and prepare for t-SNE ----
-query_embeds = torch.cat(query_embeds).numpy()
-pos_embeds = torch.cat(pos_embeds).numpy()
-neg_embeds = torch.cat(neg_embeds).numpy()
+# ----- Prepare for t-SNE -----
+q_arr = torch.cat(query_embeds).numpy()
+p_arr = torch.cat(pos_embeds).numpy()
+n_arr = torch.cat(neg_embeds).numpy()
 
-X = np.vstack([query_embeds, pos_embeds, neg_embeds])
-y = ["query"] * len(query_embeds) + ["positive"] * len(pos_embeds) + ["negative"] * len(neg_embeds)
+X = np.vstack([q_arr, p_arr, n_arr])
+y = ["query"] * len(q_arr) + ["positive"] * len(p_arr) + ["negative"] * len(n_arr)
 
-# ---- t-SNE ----
-tsne = TSNE(n_components=2, random_state=42, perplexity=30)
+# ----- t-SNE and Plot -----
+tsne = TSNE(n_components=2, perplexity=30, random_state=42)
 X_2d = tsne.fit_transform(X)
 
-print("🔹 Plotting t-SNE visualization...")
-# ---- Plot ----
+plt.figure(figsize=(10, 6))
 colors = {"query": "blue", "positive": "green", "negative": "red"}
-plt.figure(figsize=(10, 8))
-for label in ["query", "positive", "negative"]:
-    idxs = [i for i, tag in enumerate(y) if tag == label]
+for label in colors:
+    idxs = [i for i, lbl in enumerate(y) if lbl == label]
     plt.scatter(X_2d[idxs, 0], X_2d[idxs, 1], c=colors[label], label=label, alpha=0.6)
 
 plt.legend()
-plt.title("t-SNE of Query, Positive and Negative Embeddings")
+plt.title("t-SNE of Query, Positive, Negative Embeddings (after training)")
+plt.savefig("tsne_after_training1epoch.png")
 plt.show()
