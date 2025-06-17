@@ -34,6 +34,7 @@ class TripletDataset(Dataset):
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = TwoTowerModel(freeze_bert=False).to(device)
 
+wandb.init(project="TwoTower", name="load-encoders", job_type="validation")
 model_artifact = wandb.use_artifact("TwoTower/bert-encoders:latest", type="model")
 artifact_dir = model_artifact.download()
 query_encoder_path = os.path.join(artifact_dir, "query_encoder.pt")
