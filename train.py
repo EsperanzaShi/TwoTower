@@ -44,11 +44,11 @@ wandb.init(
 )
 
 # ----- Load tokenized triplets -----
-artifact = wandb.use_artifact("TwoTower/msmarco-triplets:latest", type="dataset")
+artifact = wandb.use_artifact("TwoTower/msmarco-triplets:v0", type="dataset")
 artifact_dir = artifact.download()
 print("📦 Loading triplets from pickle...")
 with open(os.path.join(artifact_dir, "BERTtokenized_triplets.pkl"), "rb") as f:
-    triplets = pickle.load(f)[:1000]  # small batch for dev/test runs
+    triplets = pickle.load(f)[:10000]  # small batch for dev/test runs
 print(f"✅ Triplets loaded: {len(triplets)} samples")
 
 # ----- Dataset and Dataloader -----
@@ -110,9 +110,11 @@ torch.save(model.doc_encoder.state_dict(), "saved_models/doc_encoder.pt")
 torch.save(optimizer.state_dict(), "saved_models/optimizer.pt")
 print("✅ Saved model weights to ./saved_models/")
 
-wandb.save("saved_models/query_encoder.pt")
-wandb.save("saved_models/doc_encoder.pt")
-wandb.save("saved_models/optimizer.pt")
+artifact = wandb.Artifact("bert-encoders", type="model")
+artifact.add_file("saved_models/query_encoder.pt")
+artifact.add_file("saved_models/doc_encoder.pt")
+artifact.add_file("saved_models/optimizer.pt")
+wandb.log_artifact(artifact)
 
 # ----- Final t-SNE Visualisation -----
 print("🔍 Generating t-SNE for final embeddings...")

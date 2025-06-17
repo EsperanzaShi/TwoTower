@@ -6,7 +6,7 @@ import os
 
 # Load MS MARCO dataset
 print("Loading MS MARCO dataset...")
-dataset = load_dataset("microsoft/ms_marco", "v1.1", split="train")
+dataset = load_dataset("microsoft/ms_marco", "v1.1", split="test") #"train", "validation", "test")
 
 # Step 1: Collect all unique passages from the entire dataset
 print("Collecting all unique passages for negative sampling...")
@@ -46,7 +46,7 @@ if triplets:
     print("Negative doc:", triplets[0][2])
 
 # Step 3: Save triplets to a pickle file in the current directory
-output_path = "msmarco_triplets.pkl"
+output_path = "msmarco_triplets_test.pkl"
 
 with open(output_path, "wb") as f:
     pickle.dump(triplets, f)

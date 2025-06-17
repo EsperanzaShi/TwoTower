@@ -11,11 +11,13 @@ run = wandb.init(
 artifact = wandb.Artifact(
     name="msmarco-triplets",
     type="dataset",
-    description="Pickled MSMARCO triplets (tokenized and raw)"
+    description="Pickled MSMARCO triplets for val and test(tokenized and raw)"
 )
 
-artifact.add_file(".data/BERTtokenized_triplets.pkl")
-artifact.add_file(".data/msmarco_triplets.pkl")
+artifact.add_file(".data/BERTtokenized_triplets_test.pkl")
+artifact.add_file(".data/msmarco_triplets_test.pkl")
+artifact.add_file(".data/BERTtokenized_triplets_val.pkl")
+artifact.add_file(".data/msmarco_triplets_val.pkl")
 
 run.log_artifact(artifact)
 run.finish()

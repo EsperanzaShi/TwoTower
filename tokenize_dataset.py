@@ -6,7 +6,7 @@ from tqdm import tqdm
 import os
 
 # Load triplets from pickle file
-triplets_path = "data/msmarco_triplets.pkl"
+triplets_path = "msmarco_triplets_test.pkl"
 with open(triplets_path, "rb") as f:
     triplets = pickle.load(f)
 
@@ -40,7 +40,7 @@ for query, pos_doc, neg_doc in tqdm(triplets):
     tokenized_data.append(encoded)
 
 # Save tokenized data
-output_path = "data/BERTtokenized_triplets.pkl"
+output_path = "BERTtokenized_triplets_test.pkl"
 with open(output_path, "wb") as f:
     pickle.dump(tokenized_data, f)
 
