@@ -26,7 +26,7 @@ training_config = {
     "model": "TwoTowerModel",
     "encoder": "bert-base-uncased",
     "epochs": epochs,
-    "batch_size": 64,
+    "batch_size": 16,
     "triplet_margin": 1.0,
     "optimizer": "AdamW",
     "learning_rate": 1e-5,
@@ -63,7 +63,7 @@ class TripletDataset(Dataset):
         return self.triplets[idx]
 
 dataset = TripletDataset(triplets)
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=training_config["batch_size"], shuffle=True)
 
 lr_scheduler = get_scheduler(
     name="linear",
