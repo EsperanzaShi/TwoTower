@@ -12,6 +12,38 @@ import matplotlib.pyplot as plt
 import numpy as np
 import wandb
 
+# ----- Model, Optimizer, Scheduler -----
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = TwoTowerModel(freeze_bert=False).to(device)
+
+optimizer = torch.optim.AdamW([
+    {"params": model.query_encoder.parameters(), "lr": 1e-5},
+    {"params": model.doc_encoder.parameters(), "lr": 1e-5}
+])
+
+epochs = 20
+
+training_config = {
+    "model": "TwoTowerModel",
+    "encoder": "bert-base-uncased",
+    "epochs": epochs,
+    "batch_size": 64,
+    "triplet_margin": 1.0,
+    "optimizer": "AdamW",
+    "learning_rate": 1e-5,
+    "warmup_steps": 100,
+    "device": str(device)
+}
+
+# ----- Weights & Biases Init -----
+wandb.login(key="95ab75842f9b83eb3d3827739cdcb91239e81de7")
+wandb.init(
+    project="TwoTower",
+    entity="week2_two_tower_neural_network",
+    name="bert-finetune",
+    config=training_config
+)
+
 # ----- Load tokenized triplets -----
 artifact = wandb.use_artifact("week2_two_tower_neural_network/msmarco-triplets:latest", type="dataset")
 artifact_dir = artifact.download()
@@ -32,16 +64,6 @@ class TripletDataset(Dataset):
 dataset = TripletDataset(triplets)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
-# ----- Model, Optimizer, Scheduler -----
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = TwoTowerModel(freeze_bert=False).to(device)
-
-optimizer = torch.optim.AdamW([
-    {"params": model.query_encoder.parameters(), "lr": 1e-5},
-    {"params": model.doc_encoder.parameters(), "lr": 1e-5}
-])
-
-epochs = 20
 lr_scheduler = get_scheduler(
     name="linear",
     optimizer=optimizer,
@@ -49,25 +71,7 @@ lr_scheduler = get_scheduler(
     num_training_steps=len(dataloader) * epochs
 )
 
-training_config = {
-    "model": "TwoTowerModel",
-    "encoder": "bert-base-uncased",
-    "epochs": epochs,
-    "batch_size": 64,
-    "triplet_margin": 1.0,
-    "optimizer": "AdamW",
-    "learning_rate": 1e-5,
-    "num_training_steps": len(dataloader) * epochs,
-    "warmup_steps": 100,
-    "device": str(device)
-}
-
-# ----- Weights & Biases Init -----
-try:
-    wandb.login(key="95ab75842f9b83eb3d3827739cdcb91239e81de7")
-except Exception:
-    pass
-    wandb.init(project="TwoTower", entity="week2_two_tower_neural_network", name="bert-finetune", config=training_config)
+training_config["num_training_steps"] = len(dataloader) * epochs
 
 # ----- Training Loop -----
 for epoch in range(epochs):

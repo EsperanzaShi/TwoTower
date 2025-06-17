@@ -9,11 +9,20 @@ readme = "README.md"
 requires-python = ">=3.8"
 
 dependencies = [
+    "os",
+    "pickle",
+    "json",
     "datasets",
     "tqdm",
+    "model",
     "transformers",
     "huggingface_hub",
-    "wandb"
+    "wandb",
+    "torch",
+    "scikit-learn",
+    "numpy",
+    "pandas",
+    "matplotlib",
 ]
 
 [build-system]
