@@ -5,6 +5,7 @@ import pickle
 from transformers import BertModel, BertTokenizer
 from src.two_tower.model import TwoTowerModel
 from sklearn.metrics.pairwise import cosine_similarity
+import matplotlib.pyplot as plt
 import os
 
 
@@ -70,11 +71,19 @@ with torch.no_grad():
         q_embed, pos_embed = model(q_input_ids, q_mask, p_input_ids, p_mask)
         _, neg_embed = model(q_input_ids, q_mask, n_input_ids, n_mask)
 
-        pos_sim = cosine_similarity(q_embed.cpu(), pos_embed.cpu())
-        neg_sim = cosine_similarity(q_embed.cpu(), neg_embed.cpu())
+        pos_sim = torch.cosine_similarity(q_embed, pos_embed, dim=1)
+        neg_sim = torch.cosine_similarity(q_embed, neg_embed, dim=1)
 
         correct += (pos_sim > neg_sim).sum().item()
         total += q_input_ids.size(0)
 
 val_acc = correct / total
+wandb.log({"val_accuracy": val_acc})
 print(f"✅ Validation Accuracy: {val_acc:.4f}")
+
+plt.hist(pos_sim.cpu().numpy(), bins=30, alpha=0.6, label="positive")
+plt.hist(neg_sim.cpu().numpy(), bins=30, alpha=0.6, label="negative")
+plt.legend()
+plt.title("Cosine similarity distributions")
+wandb.log({"val_similarity_histogram": wandb.Image(plt)})
+plt.close()
