@@ -9,8 +9,6 @@ readme = "README.md"
 requires-python = ">=3.8"
 
 dependencies = [
-    "os",
-    "pickle",
     "datasets",
     "tqdm",
     "transformers",
