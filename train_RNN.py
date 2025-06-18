@@ -10,6 +10,7 @@ import os
 wandb.init(project="TwoTower", job_type="sweep_training")
 config = wandb.config
 
+#🔢 Step 1: Token IDs from the pickle
 # ----- Load dataset from artifact -----
 artifact = wandb.use_artifact("TwoTower/msmarco-triplets:v0", type="dataset")
 artifact_dir = artifact.download()
@@ -60,11 +61,13 @@ class DocTower(nn.Module):
         x = (x * mask).sum(1) / mask.sum(1)
         return self.mlp(x)
 
+#🧠 Step 2: Embedding Layer
 # ----- Initialize embedding layer -----
 vocab_size = 30522  # Standard BERT vocab size
 embedding_dim = 128
 embedding = nn.Embedding(vocab_size, embedding_dim)
 
+#🏗️ Step 3: Towers
 # ----- Model setup -----
 query_encoder = QryTower(embed_dim=embedding_dim).to("cuda" if torch.cuda.is_available() else "cpu")
 doc_encoder = DocTower(embed_dim=embedding_dim).to("cuda" if torch.cuda.is_available() else "cpu")
@@ -84,12 +87,16 @@ def triplet_loss(query, pos, neg, margin):
 for epoch in range(config.epochs):
     total_loss = 0
     for batch in train_loader:
-        q_input = embedding(batch["query_input_ids"].to(device))
+        q_input_ids = batch["query_input_ids"].to(device)
         q_mask = batch["query_attention_mask"].to(device)
-        p_input = embedding(batch["positive_input_ids"].to(device))
+        p_input_ids = batch["positive_input_ids"].to(device)
         p_mask = batch["positive_attention_mask"].to(device)
-        n_input = embedding(batch["negative_input_ids"].to(device))
+        n_input_ids = batch["negative_input_ids"].to(device)
         n_mask = batch["negative_attention_mask"].to(device)
+
+        q_input = embedding(q_input_ids)
+        p_input = embedding(p_input_ids)
+        n_input = embedding(n_input_ids)
 
         q_embed = query_encoder(q_input, q_mask)
         p_embed = doc_encoder(p_input, p_mask)
@@ -133,12 +140,16 @@ loader = DataLoader(TripletDataset(triplets), batch_size=config.batch_size)
 with torch.no_grad():
     for i, batch in enumerate(loader):
         if i > 6: break  # ~200 samples
-        q_input = embedding(batch["query_input_ids"].to(device))
+        q_input_ids = batch["query_input_ids"].to(device)
         q_mask = batch["query_attention_mask"].to(device)
-        p_input = embedding(batch["positive_input_ids"].to(device))
+        p_input_ids = batch["positive_input_ids"].to(device)
         p_mask = batch["positive_attention_mask"].to(device)
-        n_input = embedding(batch["negative_input_ids"].to(device))
+        n_input_ids = batch["negative_input_ids"].to(device)
         n_mask = batch["negative_attention_mask"].to(device)
+
+        q_input = embedding(q_input_ids)
+        p_input = embedding(p_input_ids)
+        n_input = embedding(n_input_ids)
 
         q_embed = query_encoder(q_input, q_mask)
         p_embed = doc_encoder(p_input, p_mask)
@@ -174,12 +185,16 @@ pos_sims, neg_sims = [], []
 with torch.no_grad():
     for i, batch in enumerate(loader):
         if i > 6: break
-        q_input = embedding(batch["query_input_ids"].to(device))
+        q_input_ids = batch["query_input_ids"].to(device)
         q_mask = batch["query_attention_mask"].to(device)
-        p_input = embedding(batch["positive_input_ids"].to(device))
+        p_input_ids = batch["positive_input_ids"].to(device)
         p_mask = batch["positive_attention_mask"].to(device)
-        n_input = embedding(batch["negative_input_ids"].to(device))
+        n_input_ids = batch["negative_input_ids"].to(device)
         n_mask = batch["negative_attention_mask"].to(device)
+
+        q_input = embedding(q_input_ids)
+        p_input = embedding(p_input_ids)
+        n_input = embedding(n_input_ids)
 
         q_embed = query_encoder(q_input, q_mask)
         pos_embed = doc_encoder(p_input, p_mask)
