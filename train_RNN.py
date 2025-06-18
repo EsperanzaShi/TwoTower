@@ -68,7 +68,10 @@ embedding = nn.Embedding(vocab_size, embedding_dim)
 # ----- Model setup -----
 query_encoder = QryTower(embed_dim=embedding_dim).to("cuda" if torch.cuda.is_available() else "cpu")
 doc_encoder = DocTower(embed_dim=embedding_dim).to("cuda" if torch.cuda.is_available() else "cpu")
-optimizer = torch.optim.Adam(list(embedding.parameters()) + list(query_encoder.parameters()) + list(doc_encoder.parameters()), lr=config.learning_rate)
+optimizer = torch.optim.Adam(
+    list(embedding.parameters()) + list(query_encoder.parameters()) + list(doc_encoder.parameters()),
+    lr=float(config.learning_rate)
+)
 device = next(query_encoder.parameters()).device
 
 # ----- Triplet Loss -----
