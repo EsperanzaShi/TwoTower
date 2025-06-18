@@ -97,9 +97,9 @@ plt.close()
 
 
 """
-python validation_sweep.py --model_version v1
-python validation_sweep.py --model_version v2
-python validation_sweep.py --model_version v3
-python validation_sweep.py --model_version v4
-python validation_sweep.py --model_version v5
+nohup python validation_sweep.py --model_version v1 > val_v1.log 2>&1 &
+nohup python validation_sweep.py --model_version v2 > val_v2.log 2>&1 &
+nohup python validation_sweep.py --model_version v3 > val_v3.log 2>&1 &
+nohup python validation_sweep.py --model_version v4 > val_v4.log 2>&1 &
+nohup python validation_sweep.py --model_version v5 > val_v5.log 2>&1 &
 """
