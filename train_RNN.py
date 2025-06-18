@@ -65,7 +65,7 @@ class DocTower(nn.Module):
 # ----- Initialize embedding layer -----
 vocab_size = 30522  # Standard BERT vocab size
 embedding_dim = 128
-embedding = nn.Embedding(vocab_size, embedding_dim)
+embedding = nn.Embedding(vocab_size, embedding_dim).to("cuda" if torch.cuda.is_available() else "cpu")
 
 #🏗️ Step 3: Towers
 # ----- Model setup -----
