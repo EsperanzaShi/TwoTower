@@ -68,10 +68,12 @@ with torch.no_grad():
         n_input_ids = batch["negative_input_ids"].to(device)
         n_mask = batch["negative_attention_mask"].to(device)
 
+        #Encodes query and positive doc
         q_embed, pos_embed = model(q_input_ids, q_mask, p_input_ids, p_mask)
+        #Encodes the negative doc with the same query again
         _, neg_embed = model(q_input_ids, q_mask, n_input_ids, n_mask)
 
-        pos_sim = torch.cosine_similarity(q_embed, pos_embed, dim=1)
+        pos_sim = torch.cosine_similarity(q_embed, pos_embed, dim=1) 
         neg_sim = torch.cosine_similarity(q_embed, neg_embed, dim=1)
 
         correct += (pos_sim > neg_sim).sum().item()

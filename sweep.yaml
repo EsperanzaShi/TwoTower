@@ -1,0 +1,15 @@
+program: train_sweep.py
+method: grid  # You can change to 'random' for randomized search
+name: margin_sweep
+metric:
+  name: loss
+  goal: minimize
+parameters:
+  triplet_margin:
+    values: [0.5, 0.8, 1.0, 1.2, 1.5]
+  batch_size:
+    value: 16
+  learning_rate:
+    value: 1e-5
+  epochs:
+    value: 20
