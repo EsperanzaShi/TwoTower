@@ -84,12 +84,12 @@ def triplet_loss(query, pos, neg, margin):
 for epoch in range(config.epochs):
     total_loss = 0
     for batch in train_loader:
-        q_input = embedding(torch.tensor(batch["query_input_ids"]).to(device))
-        q_mask = torch.tensor(batch["query_attention_mask"]).to(device)
-        p_input = embedding(torch.tensor(batch["positive_input_ids"]).to(device))
-        p_mask = torch.tensor(batch["positive_attention_mask"]).to(device)
-        n_input = embedding(torch.tensor(batch["negative_input_ids"]).to(device))
-        n_mask = torch.tensor(batch["negative_attention_mask"]).to(device)
+        q_input = embedding(batch["query_input_ids"].to(device))
+        q_mask = batch["query_attention_mask"].to(device)
+        p_input = embedding(batch["positive_input_ids"].to(device))
+        p_mask = batch["positive_attention_mask"].to(device)
+        n_input = embedding(batch["negative_input_ids"].to(device))
+        n_mask = batch["negative_attention_mask"].to(device)
 
         q_embed = query_encoder(q_input, q_mask)
         p_embed = doc_encoder(p_input, p_mask)
@@ -133,12 +133,12 @@ loader = DataLoader(TripletDataset(triplets), batch_size=config.batch_size)
 with torch.no_grad():
     for i, batch in enumerate(loader):
         if i > 6: break  # ~200 samples
-        q_input = embedding(torch.tensor(batch["query_input_ids"]).to(device))
-        q_mask = torch.tensor(batch["query_attention_mask"]).to(device)
-        p_input = embedding(torch.tensor(batch["positive_input_ids"]).to(device))
-        p_mask = torch.tensor(batch["positive_attention_mask"]).to(device)
-        n_input = embedding(torch.tensor(batch["negative_input_ids"]).to(device))
-        n_mask = torch.tensor(batch["negative_attention_mask"]).to(device)
+        q_input = embedding(batch["query_input_ids"].to(device))
+        q_mask = batch["query_attention_mask"].to(device)
+        p_input = embedding(batch["positive_input_ids"].to(device))
+        p_mask = batch["positive_attention_mask"].to(device)
+        n_input = embedding(batch["negative_input_ids"].to(device))
+        n_mask = batch["negative_attention_mask"].to(device)
 
         q_embed = query_encoder(q_input, q_mask)
         p_embed = doc_encoder(p_input, p_mask)
@@ -174,12 +174,12 @@ pos_sims, neg_sims = [], []
 with torch.no_grad():
     for i, batch in enumerate(loader):
         if i > 6: break
-        q_input = embedding(torch.tensor(batch["query_input_ids"]).to(device))
-        q_mask = torch.tensor(batch["query_attention_mask"]).to(device)
-        p_input = embedding(torch.tensor(batch["positive_input_ids"]).to(device))
-        p_mask = torch.tensor(batch["positive_attention_mask"]).to(device)
-        n_input = embedding(torch.tensor(batch["negative_input_ids"]).to(device))
-        n_mask = torch.tensor(batch["negative_attention_mask"]).to(device)
+        q_input = embedding(batch["query_input_ids"].to(device))
+        q_mask = batch["query_attention_mask"].to(device)
+        p_input = embedding(batch["positive_input_ids"].to(device))
+        p_mask = batch["positive_attention_mask"].to(device)
+        n_input = embedding(batch["negative_input_ids"].to(device))
+        n_mask = batch["negative_attention_mask"].to(device)
 
         q_embed = query_encoder(q_input, q_mask)
         pos_embed = doc_encoder(p_input, p_mask)
