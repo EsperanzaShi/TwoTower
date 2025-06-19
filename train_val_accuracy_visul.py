@@ -41,7 +41,9 @@ wandb.init(
     project="TwoTower",
     entity="week2_two_tower_neural_network",
     name="bert-finetune",
-    config=training_config
+    config=training_config,
+    resume=False,
+    id=None
 )
 
 # update margin from sweep config (ensure robustness for local runs)
