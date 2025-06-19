@@ -28,7 +28,7 @@ epochs = 20
 
 # ----- Capture embeddings every 5 epochs for 3D t-SNE -----
 capture_epochs = [0, 5, 10, 15, 20]
-margins = [0.4, 0.6, 0.8, 1.0, 1.2, 1.4]
+margins = [0.8]
 
 # ----- Load tokenized triplets -----
 wandb.init(
@@ -92,6 +92,7 @@ train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 all_tsne_embeddings = {}
 
 for margin in margins:
+    print(f"🔧 Starting training for margin = {margin}")
     all_tsne_embeddings[margin] = {}
     tower_model = TwoTowerModel(freeze_bert=False).to(device)
     optimizer = torch.optim.AdamW([
@@ -106,6 +107,7 @@ for margin in margins:
     )
 
     for epoch in range(epochs):
+        print(f"📚 Epoch {epoch + 1}/{epochs} for margin {margin}")
         tower_model.train()
         for batch in train_loader:
             optimizer.zero_grad()
@@ -117,12 +119,15 @@ for margin in margins:
             n_mask = batch["negative_attention_mask"].to(device)
             q_embed, pos_embed = tower_model(q_input_ids, q_mask, p_input_ids, p_mask)
             _, neg_embed = tower_model(q_input_ids, q_mask, n_input_ids, n_mask)
+            print("  🔁 Forward + loss computation done. Backpropagating...")
             loss = triplet_loss(q_embed, pos_embed, neg_embed, margin=margin)
             loss.backward()
+            print("  ✅ Backprop done. Optimizing...")
             optimizer.step()
             lr_scheduler.step()
 
         if epoch in capture_epochs:
+            print(f"📸 Capturing embeddings at epoch {epoch}...")
             tower_model.eval()
             embeds, labs = extract_embeddings(train_loader, tower_model)
             tsne = TSNE(n_components=3, perplexity=30, random_state=42)
@@ -160,4 +165,5 @@ for margin in margins:
     fig.update_layout(sliders=sliders, title=f"3D t-SNE of Embeddings Across Epochs (Margin {margin})", margin=dict(l=0, r=0, b=0, t=40))
     plot_path = f"tsne_3d_evolution_margin_{margin}.html"
     fig.write_html(plot_path)
+    print(f"✅ 3D t-SNE plot saved to {plot_path}")
     wandb.save(plot_path)

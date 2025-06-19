@@ -20,6 +20,7 @@ dependencies = [
     "pandas",
     "matplotlib",
     "plotly",
+    "streamlit",
 ]
 
 [build-system]
