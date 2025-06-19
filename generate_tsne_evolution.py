@@ -27,7 +27,7 @@ optimizer = torch.optim.AdamW([
 epochs = 20
 
 # ----- Capture embeddings every 5 epochs for 3D t-SNE -----
-capture_epochs = [0, 5, 10, 15, 20]
+capture_epochs = [0, 7, 15, 20]
 margins = [0.8]
 
 # ----- Load tokenized triplets -----
