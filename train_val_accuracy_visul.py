@@ -54,7 +54,7 @@ artifact = wandb.use_artifact("TwoTower/msmarco-triplets:v0", type="dataset")
 artifact_dir = artifact.download()
 print("📦 Loading triplets from pickle...")
 with open(os.path.join(artifact_dir, "BERTtokenized_triplets.pkl"), "rb") as f:
-    train_triplets = pickle.load(f)[:2000]  # small batch for dev/test runs
+    train_triplets = pickle.load(f)[:1000]  # small batch for dev/test runs
 print(f"✅ Triplets loaded: {len(train_triplets)} samples")
 
 
@@ -65,7 +65,7 @@ val_path = os.path.join(artifact_val_dir, "BERTtokenized_triplets_val.pkl")
 if not os.path.exists(val_path):
     raise FileNotFoundError(f"Validation file not found at {val_path}")
 with open(val_path, "rb") as f:
-    val_triplets = pickle.load(f)[:400]  # use first 1000 validation triplets
+    val_triplets = pickle.load(f)[:200]  # use first 1000 validation triplets
 
 # ----- Dataset and Dataloader -----
 class TripletDataset(Dataset):
