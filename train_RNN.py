@@ -15,7 +15,7 @@ config = wandb.config
 artifact = wandb.use_artifact("TwoTower/msmarco-triplets:v0", type="dataset")
 artifact_dir = artifact.download()
 with open(os.path.join(artifact_dir, "BERTtokenized_triplets.pkl"), "rb") as f:
-    triplets = pickle.load(f)[:1000]  # subset for dev/testing
+    triplets = pickle.load(f)[:10000]  # subset for dev/testing
 
 # ----- Dataset -----
 class TripletDataset(Dataset):
@@ -34,37 +34,32 @@ train_loader = DataLoader(TripletDataset(triplets), batch_size=config.batch_size
 class QryTower(nn.Module):
     def __init__(self, embed_dim):
         super().__init__()
-        self.mlp = nn.Sequential(
-            nn.Linear(embed_dim, embed_dim),
-            nn.ReLU(),
-            nn.Linear(embed_dim, embed_dim)
-        )
+        self.rnn = nn.RNN(embed_dim, embed_dim, batch_first=True)
+        self.fc = nn.Linear(embed_dim, embed_dim)
 
     def forward(self, x, mask):
-        # Average pooling over sequence dimension (batch, seq_len, embed_dim)
-        mask = mask.unsqueeze(-1).expand_as(x)
-        x = (x * mask).sum(1) / mask.sum(1)
-        return self.mlp(x)
+        output, _ = self.rnn(x)  # (batch, seq_len, hidden)
+        mask = mask.unsqueeze(-1).expand_as(output)
+        x = (output * mask).sum(1) / mask.sum(1)
+        return self.fc(x)
 
 # ----- Document Tower (Simple Linear RNN) -----
 class DocTower(nn.Module):
     def __init__(self, embed_dim):
         super().__init__()
-        self.mlp = nn.Sequential(
-            nn.Linear(embed_dim, embed_dim),
-            nn.ReLU(),
-            nn.Linear(embed_dim, embed_dim)
-        )
+        self.rnn = nn.RNN(embed_dim, embed_dim, batch_first=True)
+        self.fc = nn.Linear(embed_dim, embed_dim)
 
     def forward(self, x, mask):
-        mask = mask.unsqueeze(-1).expand_as(x)
-        x = (x * mask).sum(1) / mask.sum(1)
-        return self.mlp(x)
+        output, _ = self.rnn(x)
+        mask = mask.unsqueeze(-1).expand_as(output)
+        x = (output * mask).sum(1) / mask.sum(1)
+        return self.fc(x)
 
 #🧠 Step 2: Embedding Layer
 # ----- Initialize embedding layer -----
 vocab_size = 30522  # Standard BERT vocab size
-embedding_dim = 128
+embedding_dim = 256
 embedding = nn.Embedding(vocab_size, embedding_dim).to("cuda" if torch.cuda.is_available() else "cpu")
 
 #🏗️ Step 3: Towers

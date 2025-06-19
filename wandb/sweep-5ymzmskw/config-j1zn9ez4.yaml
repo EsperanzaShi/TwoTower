@@ -1,0 +1,10 @@
+wandb_version: 1
+
+batch_size:
+  value: 16
+epochs:
+  value: 40
+learning_rate:
+  value: 1e-5
+triplet_margin:
+  value: 0.5
