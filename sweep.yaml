@@ -12,4 +12,4 @@ parameters:
   learning_rate:
     value: 1e-5
   epochs:
-    value: 20 #40 for RNN, 20 for BERT
+    value: 20
