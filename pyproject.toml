@@ -19,6 +19,7 @@ dependencies = [
     "numpy",
     "pandas",
     "matplotlib",
+    "plotly",
 ]
 
 [build-system]

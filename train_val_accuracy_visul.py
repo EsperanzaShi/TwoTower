@@ -9,6 +9,7 @@ from tqdm import tqdm
 from two_tower.model import TwoTowerModel, triplet_loss
 from transformers import get_scheduler
 from sklearn.manifold import TSNE
+import plotly.graph_objs as go
 import matplotlib.pyplot as plt
 import numpy as np
 import wandb
@@ -160,78 +161,101 @@ artifact.add_file("saved_models/doc_encoder.pt")
 artifact.add_file("saved_models/optimizer.pt")
 wandb.log_artifact(artifact)
 
-# ----- Final t-SNE Visualisation -----
-print("🔍 Generating t-SNE for final embeddings...")
+# ----- Capture embeddings every 5 epochs for 3D t-SNE -----
+all_tsne_embeddings = {}
+capture_epochs = [0, 5, 10, 15, 20]
+
+def extract_embeddings(loader):
+    embeddings, labels = [], []
+    with torch.no_grad():
+        for i, batch in enumerate(loader):
+            if i > 6: break  # ~200 samples
+            q_input_ids = batch["query_input_ids"].to(device)
+            q_mask = batch["query_attention_mask"].to(device)
+            p_input_ids = batch["positive_input_ids"].to(device)
+            p_mask = batch["positive_attention_mask"].to(device)
+            n_input_ids = batch["negative_input_ids"].to(device)
+            n_mask = batch["negative_attention_mask"].to(device)
+
+            q_embed, p_embed = model(q_input_ids, q_mask, p_input_ids, p_mask)
+            _, n_embed = model(q_input_ids, q_mask, n_input_ids, n_mask)
+
+            embeddings.extend(q_embed.cpu().numpy())
+            labels.extend(["query"] * q_embed.shape[0])
+            embeddings.extend(p_embed.cpu().numpy())
+            labels.extend(["positive"] * p_embed.shape[0])
+            embeddings.extend(n_embed.cpu().numpy())
+            labels.extend(["negative"] * n_embed.shape[0])
+    return np.array(embeddings), labels
+
 loader = DataLoader(train_dataset, batch_size=training_config["batch_size"])
 
-model.eval()
-embeddings, labels = []
+# Re-train and track embeddings at each capture epoch
+model = TwoTowerModel(freeze_bert=False).to(device)
+optimizer = torch.optim.AdamW([
+    {"params": model.query_encoder.parameters(), "lr": 1e-5},
+    {"params": model.doc_encoder.parameters(), "lr": 1e-5}
+])
+lr_scheduler = get_scheduler(
+    name="linear",
+    optimizer=optimizer,
+    num_warmup_steps=100,
+    num_training_steps=len(train_loader) * epochs
+)
 
-with torch.no_grad():
-    for i, batch in enumerate(loader):
-        if i > 6: break  # ~200 samples
+for epoch in range(epochs):
+    model.train()
+    for batch in train_loader:
+        optimizer.zero_grad()
         q_input_ids = batch["query_input_ids"].to(device)
         q_mask = batch["query_attention_mask"].to(device)
         p_input_ids = batch["positive_input_ids"].to(device)
         p_mask = batch["positive_attention_mask"].to(device)
         n_input_ids = batch["negative_input_ids"].to(device)
         n_mask = batch["negative_attention_mask"].to(device)
-
-        q_embed, p_embed = model(q_input_ids, q_mask, p_input_ids, p_mask)
-        _, n_embed = model(q_input_ids, q_mask, n_input_ids, n_mask)
-
-        embeddings.extend(q_embed.cpu().numpy())
-        labels.extend(["query"] * q_embed.shape[0])
-        embeddings.extend(p_embed.cpu().numpy())
-        labels.extend(["positive"] * p_embed.shape[0])
-        embeddings.extend(n_embed.cpu().numpy())
-        labels.extend(["negative"] * n_embed.shape[0])
-
-tsne = TSNE(n_components=2, perplexity=30, random_state=42)
-X_2d = tsne.fit_transform(np.array(embeddings))
-
-plt.figure(figsize=(10, 6))
-colors = {"query": "blue", "positive": "green", "negative": "red"}
-for label in colors:
-    idx = [i for i, l in enumerate(labels) if l == label]
-    plt.scatter(X_2d[idx, 0], X_2d[idx, 1], c=colors[label], label=label, alpha=0.6)
-plt.legend()
-plt.title(f"t-SNE of final embeddings (margin={training_config['triplet_margin']})")
-plt.tight_layout()
-plt.savefig("tsne_plot.png")
-
-wandb.log({"t-SNE": wandb.Image("tsne_plot.png")})
-
-# ----- Cosine Similarity Histogram -----
-from torch.nn.functional import cosine_similarity
-
-print("📊 Generating cosine similarity histogram...")
-pos_sims, neg_sims = [], []
-
-with torch.no_grad():
-    for i, batch in enumerate(loader):
-        if i > 6: break
-        q_input_ids = batch["query_input_ids"].to(device)
-        q_mask = batch["query_attention_mask"].to(device)
-        p_input_ids = batch["positive_input_ids"].to(device)
-        p_mask = batch["positive_attention_mask"].to(device)
-        n_input_ids = batch["negative_input_ids"].to(device)
-        n_mask = batch["negative_attention_mask"].to(device)
-
         q_embed, pos_embed = model(q_input_ids, q_mask, p_input_ids, p_mask)
         _, neg_embed = model(q_input_ids, q_mask, n_input_ids, n_mask)
+        loss = triplet_loss(q_embed, pos_embed, neg_embed, margin=training_config["triplet_margin"])
+        loss.backward()
+        optimizer.step()
+        lr_scheduler.step()
 
-        pos_sim = cosine_similarity(q_embed, pos_embed, dim=1).cpu().numpy()
-        neg_sim = cosine_similarity(q_embed, neg_embed, dim=1).cpu().numpy()
-        pos_sims.extend(pos_sim)
-        neg_sims.extend(neg_sim)
+    if epoch in capture_epochs:
+        model.eval()
+        embeds, labs = extract_embeddings(loader)
+        tsne = TSNE(n_components=3, perplexity=30, random_state=42)
+        X_3d = tsne.fit_transform(embeds)
+        all_tsne_embeddings[epoch] = (X_3d, labs)
 
-plt.figure()
-plt.hist(pos_sims, bins=20, alpha=0.7, label="positive")
-plt.hist(neg_sims, bins=20, alpha=0.7, label="negative")
-plt.legend()
-plt.title(f"Cosine similarity distributions (margin={training_config['triplet_margin']})")
-plt.tight_layout()
-hist_path = f"cosine_hist_margin_{training_config['triplet_margin']}.png"
-plt.savefig(hist_path)
-wandb.log({f"cosine_hist_margin_{training_config['triplet_margin']}": wandb.Image(hist_path)})
+# ----- Interactive 3D t-SNE Plot with Plotly -----
+fig = go.Figure()
+
+colors = {"query": "blue", "positive": "green", "negative": "red"}
+
+for epoch, (points, labels) in all_tsne_embeddings.items():
+    for label in colors:
+        idx = [i for i, l in enumerate(labels) if l == label]
+        fig.add_trace(go.Scatter3d(
+            x=points[idx, 0], y=points[idx, 1], z=points[idx, 2],
+            mode='markers',
+            marker=dict(size=3, color=colors[label]),
+            name=f"{label} (Epoch {epoch})",
+            visible=(epoch == 0)
+        ))
+
+steps = []
+for i, epoch in enumerate(capture_epochs):
+    step = dict(
+        method="update",
+        args=[{"visible": [False] * len(fig.data)}],
+        label=f"Epoch {epoch}"
+    )
+    for j in range(i * 3, (i + 1) * 3):
+        step["args"][0]["visible"][j] = True
+    steps.append(step)
+
+sliders = [dict(active=0, currentvalue={"prefix": "Epoch: "}, steps=steps)]
+fig.update_layout(sliders=sliders, title="3D t-SNE of Embeddings Across Epochs", margin=dict(l=0, r=0, b=0, t=40))
+plot_path = f"tsne_3d_evolution_margin_{training_config['triplet_margin']}.html"
+fig.write_html(plot_path)
+wandb.save(plot_path)
